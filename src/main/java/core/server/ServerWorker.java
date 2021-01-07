@@ -24,10 +24,6 @@ public class ServerWorker implements Runnable {
                 clientSocket.getRemoteSocketAddress()
         );
         try {
-            // Initialize reader and writer
-            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            DataOutputStream writer = new DataOutputStream(clientSocket.getOutputStream());
-
             // Get request
             String requestJson =  Util.inputStreamToJson(clientSocket.getInputStream());
             Request request = gson.fromJson(requestJson, Request.class);
