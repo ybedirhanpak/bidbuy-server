@@ -1,3 +1,4 @@
+import api.dto.ProductCreate;
 import core.server.Server;
 
 public class Main {
@@ -15,7 +16,15 @@ public class Main {
                 e.printStackTrace();
             }
 
-            c.sendRequest("getValue", "Hello world");
+            ProductCreate productCreate = new ProductCreate(
+                    "Test product",
+                    10.99,
+                    1,
+                    "https://productimages.hepsiburada.net/s/49/1100/10986386784306.jpg"
+            );
+
+            c.sendRequest("getProductList", productCreate);
+            c.sendRequest("createProduct", productCreate);
         }).start();
     }
 }
