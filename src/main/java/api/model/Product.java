@@ -1,4 +1,4 @@
-package database.model;
+package api.model;
 
 import database.DatabaseModel;
 

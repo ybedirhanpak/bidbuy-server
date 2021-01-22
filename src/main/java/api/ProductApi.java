@@ -5,7 +5,7 @@ import api.dto.ProductCreate;
 import core.Request;
 import core.Response;
 import database.DatabaseManager;
-import database.model.Product;
+import api.model.Product;
 
 public class ProductApi {
 
