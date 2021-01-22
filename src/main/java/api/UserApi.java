@@ -2,7 +2,7 @@ package api;
 
 import api.dto.Message;
 import api.dto.UserAuth;
-import api.dto.Retrieve;
+import api.dto.IdHolder;
 import api.model.User;
 import core.Request;
 import core.Response;
@@ -17,7 +17,7 @@ public class UserApi {
     }
 
     public static Response getUser(Request request) {
-        Retrieve body = (Retrieve) request.body;
+        IdHolder body = (IdHolder) request.body;
         int userId = body.id;
         User user = db.get(userId);
         if (user != null) {

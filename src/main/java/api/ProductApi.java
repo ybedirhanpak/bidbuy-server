@@ -1,7 +1,7 @@
 package api;
 
 import api.dto.Message;
-import api.dto.Retrieve;
+import api.dto.IdHolder;
 import api.dto.ProductCreate;
 import core.Request;
 import core.Response;
@@ -17,7 +17,7 @@ public class ProductApi {
     }
 
     public static Response getProduct(Request request) {
-        Retrieve body = (Retrieve) request.body;
+        IdHolder body = (IdHolder) request.body;
         int productId = body.id;
         Product product = db.get(productId);
         if(product != null) {

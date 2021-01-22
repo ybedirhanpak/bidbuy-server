@@ -1,5 +1,5 @@
 package api.dto;
 
-public class Retrieve {
+public class IdHolder {
     public int id;
 }

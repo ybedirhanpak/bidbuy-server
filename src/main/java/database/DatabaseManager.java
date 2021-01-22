@@ -113,6 +113,26 @@ public class DatabaseManager<T extends DatabaseModel> {
         return null;
     }
 
+    public List<T> getAllWithKeyValue(String key, Object value) {
+        ArrayList<T> result = new ArrayList<>();
+        for (int i = 1; i <= type.getTypeId(); i++) {
+            String fileName = getObjectFile(i);
+            File file = new File(fileName);
+            if (file.exists()) {
+                try {
+                    JsonReader reader = new JsonReader(new FileReader(fileName));
+                    LinkedTreeMap<String, Object> map =  gson.fromJson(reader, LinkedTreeMap.class);
+                    if(map.get(key).equals(value)) {
+                        result.add(get(i));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
+    }
+
     public T create(T obj) {
         int id = type.getTypeId();
         String fileName = getObjectFile(id);

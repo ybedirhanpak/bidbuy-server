@@ -2,7 +2,7 @@ package core;
 
 import api.ProductApi;
 import api.UserApi;
-import api.dto.Retrieve;
+import api.dto.IdHolder;
 import api.dto.ProductCreate;
 import api.dto.UserAuth;
 import api.model.Product;
@@ -23,7 +23,7 @@ public class Router {
                 response = ProductApi.getProductList(request);
                 break;
             case "getProduct":
-                convertRequestBody(request, Retrieve.class);
+                convertRequestBody(request, IdHolder.class);
                 response = ProductApi.getProduct(request);
                 break;
             case "createProduct":
@@ -42,7 +42,7 @@ public class Router {
                 response = UserApi.getUserList(request);
                 break;
             case "getUser":
-                convertRequestBody(request, Retrieve.class);
+                convertRequestBody(request, IdHolder.class);
                 response = UserApi.getUser(request);
                 break;
             case "register":
