@@ -3,6 +3,7 @@ package core;
 import api.ProductApi;
 import api.dto.Retrieve;
 import api.dto.ProductCreate;
+import api.model.Product;
 import com.google.gson.Gson;
 
 public class Router {
@@ -14,7 +15,7 @@ public class Router {
     }
 
     public static Response routeRequest(Request request) {
-        Response response = new Response(null);
+        Response response = new Response();
         switch (request.identifier) {
             case "getProductList":
                 response = ProductApi.getProductList(request);
@@ -26,6 +27,14 @@ public class Router {
             case "createProduct":
                 convertRequestBody(request, ProductCreate.class);
                 response = ProductApi.createProduct(request);
+                break;
+            case "updateProduct":
+                convertRequestBody(request, Product.class);
+                response = ProductApi.updateProduct(request);
+                break;
+            case "deleteProduct":
+                convertRequestBody(request, Product.class);
+                response = ProductApi.deleteProduct(request);
                 break;
             default:
                 break;
