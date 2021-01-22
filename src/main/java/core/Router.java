@@ -1,10 +1,10 @@
 package core;
 
+import api.BidApi;
 import api.ProductApi;
 import api.UserApi;
-import api.dto.IdHolder;
-import api.dto.ProductCreate;
-import api.dto.UserAuth;
+import api.dto.*;
+import api.model.Bid;
 import api.model.Product;
 import com.google.gson.Gson;
 
@@ -52,6 +52,33 @@ public class Router {
             case "login":
                 convertRequestBody(request, UserAuth.class);
                 response = UserApi.login(request);
+                break;
+            case "getBidList":
+                response = BidApi.getBidList(request);
+                break;
+            case "getBidListOfProduct":
+                convertRequestBody(request, ProductIdHolder.class);
+                response = BidApi.getBidListOfProduct(request);
+                break;
+            case "getBidListOfUser":
+                convertRequestBody(request, UserIdHolder.class);
+                response = BidApi.getBidListOfUser(request);
+                break;
+            case "getBid":
+                convertRequestBody(request, IdHolder.class);
+                response = BidApi.getBid(request);
+                break;
+            case "createBid":
+                convertRequestBody(request, BidCreate.class);
+                response = BidApi.createBid(request);
+                break;
+            case "updateBid":
+                convertRequestBody(request, Bid.class);
+                response = BidApi.updateBid(request);
+                break;
+            case "deleteBid":
+                convertRequestBody(request, Bid.class);
+                response = BidApi.deleteBid(request);
                 break;
             default:
                 break;
