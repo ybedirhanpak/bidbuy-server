@@ -1,6 +1,7 @@
 package database;
 
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 
@@ -88,6 +89,25 @@ public class DatabaseManager<T extends DatabaseModel> {
                 return readObjectFromFile(fileName);
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public T getWithKeyValue(String key, Object value) {
+        for (int i = 1; i <= type.getTypeId(); i++) {
+            String fileName = getObjectFile(i);
+            File file = new File(fileName);
+            if (file.exists()) {
+                try {
+                    JsonReader reader = new JsonReader(new FileReader(fileName));
+                    LinkedTreeMap<String, Object> map =  gson.fromJson(reader, LinkedTreeMap.class);
+                    if(map.get(key).equals(value)) {
+                        return get(i);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return null;
