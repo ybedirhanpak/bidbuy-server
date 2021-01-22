@@ -1,8 +1,10 @@
 package core;
 
 import api.ProductApi;
+import api.UserApi;
 import api.dto.Retrieve;
 import api.dto.ProductCreate;
+import api.dto.UserAuth;
 import api.model.Product;
 import com.google.gson.Gson;
 
@@ -35,6 +37,21 @@ public class Router {
             case "deleteProduct":
                 convertRequestBody(request, Product.class);
                 response = ProductApi.deleteProduct(request);
+                break;
+            case "getUserList":
+                response = UserApi.getUserList(request);
+                break;
+            case "getUser":
+                convertRequestBody(request, Retrieve.class);
+                response = UserApi.getUser(request);
+                break;
+            case "register":
+                convertRequestBody(request, UserAuth.class);
+                response = UserApi.register(request);
+                break;
+            case "login":
+                convertRequestBody(request, UserAuth.class);
+                response = UserApi.login(request);
                 break;
             default:
                 break;
