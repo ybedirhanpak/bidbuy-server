@@ -1,7 +1,8 @@
 package database.model;
 
-public class Product {
-    public int id;
+import database.DatabaseModel;
+
+public class Product extends DatabaseModel {
     public String name;
     public double price;
     public int ownerId;
@@ -14,8 +15,7 @@ public class Product {
         this.price = price;
     }
 
-    public Product(int id, String name, double price, int ownerId, String imageURL) {
-        this.id = id;
+    public Product(String name, double price, int ownerId, String imageURL) {
         this.name = name;
         this.price = price;
         this.ownerId = ownerId;

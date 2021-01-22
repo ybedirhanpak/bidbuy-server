@@ -3,101 +3,146 @@ package database;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import database.model.Product;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabaseManager {
+
+public class DatabaseManager<T extends DatabaseModel> {
 
     private final Gson gson = new Gson();
+    private final String typeName;
+    private final Class<T> className;
+    private DatabaseType type;
 
-    private final List<Product> productList;
-    private final String FILE_NAME = "db/products.json";
-    private final Type LIST_TYPE = new TypeToken<List<Product>>() {}.getType();
-
-    private int productID;
-
-    public DatabaseManager() {
-        this.productList = readFromFile();
-        this.productID = productList.size();
+    public DatabaseManager(Class<T> className) {
+        this.typeName = className.getSimpleName().toLowerCase();
+        this.className = className;
+        System.out.println(className.toString());
+        try {
+            String typeFileName = getTypeFile();
+            boolean fileCreated = this.createFile(typeFileName);
+            if (fileCreated) {
+                // Create type object
+                this.type = new DatabaseType(this.typeName);
+                // Save type object into file
+                writeToFile(type, typeFileName);
+            } else {
+                // Read type object from file
+                this.type = readTypeFromFile(typeFileName);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void checkFileExists() throws IOException {
-        File file = new File(FILE_NAME);
+    private String getTypeFile() {
+        return "db/" + this.typeName + "/" + this.typeName + "_type.json";
+    }
+
+    private String getObjectFile(int id) {
+        return "db/" + this.typeName + "/" + this.typeName + "_" + id + ".json";
+    }
+
+    private boolean createFile(String fileName) throws IOException {
+        File file = new File(fileName);
         boolean dirCreated = file.getParentFile().mkdirs();
         boolean fileCreated = file.createNewFile();
+        return dirCreated || fileCreated;
     }
 
-    private void saveToFile() {
-        try {
-            checkFileExists();
-            FileWriter writer = new FileWriter(FILE_NAME);
-            gson.toJson(this.productList, writer);
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private boolean deleteFile(String fileName) {
+        File file = new File(fileName);
+        if (file.exists()) {
+            return file.delete();
         }
+        return false;
     }
 
-    private List<Product> readFromFile() {
-        try {
-            checkFileExists();
-            JsonReader reader = new JsonReader(new FileReader(FILE_NAME));
-            ArrayList<Product> list = gson.fromJson(reader, LIST_TYPE);
-            if (list == null) {
-                list = new ArrayList<>();
+    private void writeToFile(Object object, String fileName) throws IOException {
+        FileWriter writer = new FileWriter(fileName);
+        gson.toJson(object, writer);
+        writer.close();
+    }
+
+    private DatabaseType readTypeFromFile(String fileName) throws IOException {
+        JsonReader reader = new JsonReader(new FileReader(fileName));
+        return gson.fromJson(reader, new TypeToken<DatabaseType>() {
+        }.getType());
+    }
+
+    private T readObjectFromFile(String fileName) throws IOException {
+        JsonReader reader = new JsonReader(new FileReader(fileName));
+        return gson.fromJson(reader, className);
+    }
+
+    public T get(int id) {
+        String fileName = getObjectFile(id);
+        File file = new File(fileName);
+        if (file.exists()) {
+            try {
+                return readObjectFromFile(fileName);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            return list;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return new ArrayList<>();
+        return null;
     }
 
-    public List<Product> getProductList() {
-        return productList;
-    }
-
-    public Product getProduct(int id) {
-        return productList.stream()
-                .filter(p -> p.id == id)
-                .findFirst()
-                .orElse(null);
-    }
-
-    public Product createProduct(String name, double price, int ownerId, String imageURL) {
-        Product product = new Product(this.productID, name, price, ownerId, imageURL);
-        productList.add(product);
-        this.productID++;
-
-        saveToFile();
-        return product;
-    }
-
-    public Product updateProduct(Product _product) {
-        Product product = getProduct(_product.id);
-
-        if (product != null) {
-            product.copyFrom(_product);
+    public T create(T obj) {
+        int id = type.getTypeId();
+        String fileName = getObjectFile(id);
+        File file = new File(fileName);
+        if (!file.exists()) {
+            try {
+                // Set object id and save into file
+                obj.id = id;
+                writeToFile(obj, fileName);
+                // Increase id and save into file
+                type.increaseTypeId();
+                writeToFile(type, getTypeFile());
+                return obj;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
-        saveToFile();
-        return product;
+        return null;
     }
 
-    public void removeProduct(Product _product) {
-        Product product = getProduct(_product.id);
-
-        if (product != null) {
-            productList.remove(product);
+    public List<T> getAll() {
+        ArrayList<T> result = new ArrayList<>();
+        for (int i = 1; i <= type.getTypeId(); i++) {
+            T obj = get(i);
+            if (obj != null) {
+                result.add(obj);
+            }
         }
+        return result;
+    }
 
-        saveToFile();
+    public T update(T obj) {
+        T old = get(obj.id);
+        if (old != null) {
+            try {
+                // Update the file directly
+                writeToFile(obj, getObjectFile(obj.id));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public boolean delete(T obj) {
+        T old = get(obj.id);
+        if (old != null) {
+            // Delete the file directly
+            return deleteFile(getObjectFile(obj.id));
+        }
+        return false;
     }
 }
