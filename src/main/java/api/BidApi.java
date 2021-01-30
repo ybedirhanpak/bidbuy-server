@@ -2,6 +2,7 @@ package api;
 
 import api.dto.*;
 import api.model.Bid;
+import api.model.Product;
 import core.Request;
 import core.Response;
 import database.DatabaseManager;
@@ -11,6 +12,8 @@ import java.util.List;
 public class BidApi {
 
     private static final DatabaseManager<Bid> db = new DatabaseManager<>(Bid.class);
+    private static final DatabaseManager<Product> product_db = new DatabaseManager<>(Product.class);
+
 
     public static Response getBidList(Request request) {
         return new Response(db.getAll(), 200);
@@ -41,12 +44,27 @@ public class BidApi {
     public static Response createBid(Request request) {
         BidCreate body = (BidCreate) request.body;
         Bid bid = new Bid(body.fromUserId, body.toProductId, body.price);
-        Bid bidCreated = db.create(bid);
-        if (bidCreated != null) {
-            return new Response(bidCreated, 200);
+        Product product = product_db.get(body.toProductId);
+        if (body.price <= product.price) {
+            return new Response(
+                    new Message("Bid price must be greater than product price"),
+                    500);
         }
 
-        return new Response(new Message("Bid cannot be created."), 500);
+        // Update product's price
+        product.price = body.price;
+        Product updatedProduct = product_db.update(product);
+        if (updatedProduct == null) {
+            return new Response(
+                    new Message("Bid cannot be created: Error while updating the product"),
+                    500);
+        }
+        Bid bidCreated = db.create(bid);
+        if (bidCreated == null) {
+            return new Response(new Message("Bid cannot be created."), 500);
+        }
+
+        return new Response(bidCreated, 200);
     }
 
     public static Response updateBid(Request request) {
