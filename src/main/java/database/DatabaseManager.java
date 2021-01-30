@@ -170,6 +170,7 @@ public class DatabaseManager<T extends DatabaseModel> {
             try {
                 // Update the file directly
                 writeToFile(obj, getObjectFile(obj.id));
+                return obj;
             } catch (IOException e) {
                 e.printStackTrace();
             }
