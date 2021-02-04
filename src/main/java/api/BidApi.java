@@ -21,13 +21,13 @@ public class BidApi {
 
     public static Response getBidListOfProduct(Request request) {
         ProductIdHolder body = (ProductIdHolder) request.body;
-        List<Bid> bidList = db.getAllWithKeyValue("toProductId", body.productId);
+        List<Bid> bidList = db.getAllWithKeyValue("toProductId", (double) body.productId);
         return new Response(bidList, 200);
     }
 
     public static Response getBidListOfUser(Request request) {
         UserIdHolder body = (UserIdHolder) request.body;
-        List<Bid> bidList = db.getAllWithKeyValue("fromUserId", body.userId);
+        List<Bid> bidList = db.getAllWithKeyValue("fromUserId", (double) body.userId);
         return new Response(bidList, 200);
     }
 
