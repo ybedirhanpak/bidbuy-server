@@ -41,12 +41,13 @@ public class SubscriptionManager {
         }
     }
 
-    public static synchronized void triggerSubscriptions(String identifier) {
+    public static synchronized void triggerSubscriptions(String identifier, int subjectId) {
         String[] triggeredEndpoints = endPointTriggers.get(identifier);
         for (String endpoint : triggeredEndpoints) {
             ArrayList<Subscription> subscriptions = subscriptionMap.get(endpoint);
             for (Subscription subscription : subscriptions) {
-                handleSubscription(subscription);
+                if (subscription.subjectId == subjectId)
+                    handleSubscription(subscription);
             }
         }
     }
@@ -55,7 +56,8 @@ public class SubscriptionManager {
         new Thread(() -> {
             Gson gson = new Gson();
             try {
-                System.out.println("Handle subscription of: " + subscription.request.identifier);
+                System.out.println("Handle subscription of: " + subscription.request.identifier +
+                        " with id:" + subscription.subjectId);
                 Request request = subscription.request;
                 DataOutputStream outputStream = subscription.outputStream;
 

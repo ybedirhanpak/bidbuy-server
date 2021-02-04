@@ -35,10 +35,10 @@ public class ServerWorker implements Runnable {
             String responseJson = gson.toJson(response);
             Util.writeJsonToOutputStream(responseJson, clientSocket.getOutputStream());
 
-            if (request.multipleResponse) {
+            if (request.subscriptionSubject > -1) {
                 DataOutputStream requestStream = new DataOutputStream(clientSocket.getOutputStream());
                 // Save subscription into map
-                Subscription subscription = new Subscription(request, requestStream);
+                Subscription subscription = new Subscription(request, requestStream, request.subscriptionSubject);
                 SubscriptionManager.saveSubscription(subscription);
             }
         } catch (IOException e) {

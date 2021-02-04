@@ -36,8 +36,8 @@ public class Client {
         }
     }
 
-    public void sendContinuousRequest(String identifier, Object body) {
-        Request request = new Request(identifier, body, true);
+    public void sendContinuousRequest(String identifier, Object body, int subscriptionSubject) {
+        Request request = new Request(identifier, body, subscriptionSubject);
 
         try {
             boolean waitForResponse = true;
