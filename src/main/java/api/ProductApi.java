@@ -1,9 +1,6 @@
 package api;
 
-import api.dto.Message;
-import api.dto.IdHolder;
-import api.dto.ProductCreate;
-import api.dto.ProductOut;
+import api.dto.*;
 import api.model.Bid;
 import api.model.User;
 import core.Request;
@@ -26,10 +23,15 @@ public class ProductApi {
         IdHolder body = (IdHolder) request.body;
         int productId = body.id;
         Product product = db.get(productId);
-        if(product != null) {
+        if (product != null) {
             User owner = userDb.get(product.ownerId);
             Bid lastBid = bidDb.get(product.lastBidId);
-            ProductOut productOut = new ProductOut(product, owner, lastBid);
+            User fromUser = userDb.get(lastBid.fromUserId);
+            ProductOut productOut = new ProductOut(
+                    product,
+                    new UserOut(owner),
+                    new BidOut(lastBid, new UserOut(fromUser))
+            );
             return new Response(productOut, 200);
         }
         return new Response(new Message("Product cannot be retrieved."), 500);

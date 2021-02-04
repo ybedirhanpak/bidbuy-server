@@ -3,16 +3,20 @@ package api;
 import api.dto.*;
 import api.model.Bid;
 import api.model.Product;
+import api.model.User;
 import core.Request;
 import core.Response;
 import database.DatabaseManager;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class BidApi {
 
     private static final DatabaseManager<Bid> db = new DatabaseManager<>(Bid.class);
     private static final DatabaseManager<Product> product_db = new DatabaseManager<>(Product.class);
+    private static final DatabaseManager<User> userDb = new DatabaseManager<>(User.class);
 
 
     public static Response getBidList(Request request) {
@@ -22,7 +26,12 @@ public class BidApi {
     public static Response getBidListOfProduct(Request request) {
         ProductIdHolder body = (ProductIdHolder) request.body;
         List<Bid> bidList = db.getAllWithKeyValue("toProductId", (double) body.productId);
-        return new Response(bidList, 200);
+        List<BidOut> bidOutList = new ArrayList<>();
+        bidList.forEach(bid -> {
+            User fromUser = userDb.get(bid.fromUserId);
+            bidOutList.add(new BidOut(bid, new UserOut(fromUser)));
+        });
+        return new Response(bidOutList, 200);
     }
 
     public static Response getBidListOfUser(Request request) {

@@ -10,10 +10,10 @@ public class ProductOut {
     public double price;
     public boolean isSold;
     public String imageURL;
-    public Bid lastBid;
-    public User owner;
+    public BidOut lastBid;
+    public UserOut owner;
 
-    public ProductOut(Product product, User owner, Bid lastBid) {
+    public ProductOut(Product product, UserOut owner, BidOut lastBid) {
         this.id = product.id;
         this.name = product.name;
         this.price = product.price;
