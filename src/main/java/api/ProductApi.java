@@ -3,6 +3,9 @@ package api;
 import api.dto.Message;
 import api.dto.IdHolder;
 import api.dto.ProductCreate;
+import api.dto.ProductOut;
+import api.model.Bid;
+import api.model.User;
 import core.Request;
 import core.Response;
 import database.DatabaseManager;
@@ -11,6 +14,9 @@ import api.model.Product;
 public class ProductApi {
 
     private static final DatabaseManager<Product> db = new DatabaseManager<>(Product.class);
+    private static final DatabaseManager<User> userDb = new DatabaseManager<>(User.class);
+    private static final DatabaseManager<Bid> bidDb = new DatabaseManager<>(Bid.class);
+
 
     public static Response getProductList(Request request) {
         return new Response(db.getAll(), 200);
@@ -21,7 +27,10 @@ public class ProductApi {
         int productId = body.id;
         Product product = db.get(productId);
         if(product != null) {
-            return new Response(product, 200);
+            User owner = userDb.get(product.ownerId);
+            Bid lastBid = bidDb.get(product.lastBidId);
+            ProductOut productOut = new ProductOut(product, owner, lastBid);
+            return new Response(productOut, 200);
         }
         return new Response(new Message("Product cannot be retrieved."), 500);
     }

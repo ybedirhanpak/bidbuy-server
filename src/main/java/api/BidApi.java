@@ -51,17 +51,21 @@ public class BidApi {
                     500);
         }
 
-        // Update product's price
-        product.price = body.price;
-        Product updatedProduct = product_db.update(product);
-        if (updatedProduct == null) {
-            return new Response(
-                    new Message("Bid cannot be created: Error while updating the product"),
-                    500);
-        }
+        // Create bid
         Bid bidCreated = db.create(bid);
         if (bidCreated == null) {
             return new Response(new Message("Bid cannot be created."), 500);
+        }
+
+        // Update product
+        product.price = body.price;
+        product.lastBidId = bidCreated.id;
+        Product updatedProduct = product_db.update(product);
+        if (updatedProduct == null) {
+            db.delete(bidCreated);
+            return new Response(
+                    new Message("Bid cannot be created: Error while updating the product"),
+                    500);
         }
 
         return new Response(bidCreated, 200);
