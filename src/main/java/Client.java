@@ -35,4 +35,30 @@ public class Client {
             e.printStackTrace();
         }
     }
+
+    public void sendContinuousRequest(String identifier, Object body) {
+        Request request = new Request(identifier, body, true);
+
+        try {
+            boolean waitForResponse = true;
+            Socket clientSocket = new Socket(SERVER_IP, SERVER_PORT);
+
+            // Send request
+            String requestJson = gson.toJson(request);
+            Util.writeJsonToOutputStream(requestJson, clientSocket.getOutputStream());
+
+            // Get response
+            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            // Read as long as you want to get response from server
+            while(waitForResponse) {
+                String response = reader.readLine();
+                System.out.println("Client received: " + response);
+            }
+
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -1,10 +1,9 @@
 package core.server;
 
-import core.Request;
-import core.Response;
+import core.*;
 import com.google.gson.Gson;
-import core.Router;
-import core.Util;
+import core.route.Router;
+import core.route.SubscriptionManager;
 
 import java.io.*;
 import java.net.Socket;
@@ -25,16 +24,23 @@ public class ServerWorker implements Runnable {
         );
         try {
             // Get request
-            String requestJson =  Util.inputStreamToJson(clientSocket.getInputStream());
+            String requestJson = Util.inputStreamToJson(clientSocket.getInputStream());
             Request request = gson.fromJson(requestJson, Request.class);
-
-            // Handle request
             System.out.println("Server thread received: " + request.identifier);
+
+            // Get a single response
             Response response = Router.routeRequest(request);
 
-            // Send response
+            // Send a single response
             String responseJson = gson.toJson(response);
             Util.writeJsonToOutputStream(responseJson, clientSocket.getOutputStream());
+
+            if (request.multipleResponse) {
+                DataOutputStream requestStream = new DataOutputStream(clientSocket.getOutputStream());
+                // Save subscription into map
+                Subscription subscription = new Subscription(request, requestStream);
+                SubscriptionManager.saveSubscription(subscription);
+            }
         } catch (IOException e) {
             System.out.println("Error occurred while handling request.");
             e.printStackTrace();

@@ -23,7 +23,6 @@ public class DatabaseManager<T extends DatabaseModel> {
     public DatabaseManager(Class<T> className) {
         this.typeName = className.getSimpleName().toLowerCase();
         this.className = className;
-        System.out.println(className.toString());
         try {
             String typeFileName = getTypeFile();
             boolean fileCreated = this.createFile(typeFileName);

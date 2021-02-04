@@ -1,4 +1,4 @@
-package core;
+package core.route;
 
 import api.BidApi;
 import api.ProductApi;
@@ -7,6 +7,8 @@ import api.dto.*;
 import api.model.Bid;
 import api.model.Product;
 import com.google.gson.Gson;
+import core.Request;
+import core.Response;
 
 public class Router {
 
@@ -71,6 +73,7 @@ public class Router {
             case "createBid":
                 convertRequestBody(request, BidCreate.class);
                 response = BidApi.createBid(request);
+                SubscriptionManager.triggerSubscriptions("createBid");
                 break;
             case "updateBid":
                 convertRequestBody(request, Bid.class);
