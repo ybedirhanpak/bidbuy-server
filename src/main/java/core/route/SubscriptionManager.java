@@ -12,8 +12,8 @@ import java.util.HashMap;
 
 public class SubscriptionManager {
 
-    static HashMap<String, String[]> endPointTriggers = new HashMap<>();
-    static HashMap<String, ArrayList<Subscription>> subscriptionMap = new HashMap<>();
+    static final HashMap<String, String[]> endPointTriggers = new HashMap<>();
+    static final HashMap<String, ArrayList<Subscription>> subscriptionMap = new HashMap<>();
 
     static {
         String[] createBidTriggers = {"getProduct"};
@@ -35,9 +35,7 @@ public class SubscriptionManager {
 
     private static synchronized void removeSubscription(Subscription subscription) {
         if (subscriptionMap.get(subscription.request.identifier) != null) {
-            ArrayList<Subscription> subscriptions = subscriptionMap.get(subscription.request.identifier);
-            subscriptions.remove(subscription);
-            subscriptionMap.put(subscription.request.identifier, subscriptions);
+            subscriptionMap.get(subscription.request.identifier).remove(subscription);
         }
     }
 
@@ -45,9 +43,11 @@ public class SubscriptionManager {
         String[] triggeredEndpoints = endPointTriggers.get(identifier);
         for (String endpoint : triggeredEndpoints) {
             ArrayList<Subscription> subscriptions = subscriptionMap.get(endpoint);
-            for (Subscription subscription : subscriptions) {
-                if (subscription.subjectId == subjectId)
-                    handleSubscription(subscription);
+            if(subscriptions != null) {
+                for (Subscription subscription : subscriptions) {
+                    if (subscription.subjectId == subjectId)
+                        handleSubscription(subscription);
+                }
             }
         }
     }
