@@ -55,7 +55,7 @@ public class DatabaseManager<T extends DatabaseModel> {
     }
 
     private void printLockMessage(int id, String message) {
-        getLock(id).printMsg(message);
+        getLock(id).printMsg(message  + " : " + className.getSimpleName());
     }
 
     public T get(int id) {
@@ -83,19 +83,26 @@ public class DatabaseManager<T extends DatabaseModel> {
 
     public T getWithKeyValue(String key, Object value) {
         Gson gson = Util.getGson();
-        for (int i = 1; i <= type.getTypeId(); i++) {
+        for (int i = 0; i < type.getTypeId(); i++) {
             String fileName = getObjectJSONFileName(i);
-            File file = new File(fileName);
-            if (file.exists()) {
-                try {
-                    JsonReader reader = new JsonReader(new FileReader(fileName));
-                    LinkedTreeMap<String, Object> map = gson.fromJson(reader, LinkedTreeMap.class);
-                    if (map.get(key).equals(value)) {
-                        return get(i);
+            try {
+                getLock(i).lock();
+                File file = new File(fileName);
+                if (file.exists()) {
+                    try {
+                        JsonReader reader = new JsonReader(new FileReader(fileName));
+                        LinkedTreeMap<String, Object> map = gson.fromJson(reader, LinkedTreeMap.class);
+                        if (map.get(key).equals(value)) {
+                            return get(i);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                getLock(i).release();
             }
         }
         return null;
@@ -104,22 +111,29 @@ public class DatabaseManager<T extends DatabaseModel> {
     public List<T> getAllWithKeyValue(String key, Object value) {
         Gson gson = Util.getGson();
         ArrayList<T> result = new ArrayList<>();
-        for (int i = 1; i <= type.getTypeId(); i++) {
+        for (int i = 0; i < type.getTypeId(); i++) {
             String fileName = getObjectJSONFileName(i);
-            File file = new File(fileName);
-            if (file.exists()) {
-                try {
-                    JsonReader reader = new JsonReader(new FileReader(fileName));
-                    LinkedTreeMap<String, Object> map = gson.fromJson(reader, LinkedTreeMap.class);
-                    if (map.get(key).equals(value)) {
-                        T obj = get(i);
-                        if (obj != null) {
-                            result.add(obj);
+            try {
+                getLock(i).lock();
+                File file = new File(fileName);
+                if (file.exists()) {
+                    try {
+                        JsonReader reader = new JsonReader(new FileReader(fileName));
+                        LinkedTreeMap<String, Object> map = gson.fromJson(reader, LinkedTreeMap.class);
+                        if (map.get(key).equals(value)) {
+                            T obj = get(i);
+                            if (obj != null) {
+                                result.add(obj);
+                            }
                         }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                getLock(i).release();
             }
         }
         return result;
@@ -157,7 +171,7 @@ public class DatabaseManager<T extends DatabaseModel> {
     }
 
     public List<T> getAll() {
-        ThreadManager.message("getWithKeyValue");
+        ThreadManager.message("getAll");
         ArrayList<T> result = new ArrayList<>();
         for (int i = 1; i <= type.getTypeId(); i++) {
             T obj = get(i);
@@ -169,10 +183,10 @@ public class DatabaseManager<T extends DatabaseModel> {
     }
 
     public T update(T obj) {
-        ThreadManager.message("Before update, Lock:" + getLock(obj.id));
+        printLockMessage(obj.id, "Before update");
         try {
             getLock(obj.id).lock();
-            ThreadManager.message("Inside update, Lock:" + getLock(obj.id));
+            printLockMessage(obj.id, "Inside update");
             T old = get(obj.id);
             if (old != null) {
                 try {
