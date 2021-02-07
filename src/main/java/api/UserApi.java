@@ -9,10 +9,15 @@ import core.Request;
 import core.Response;
 import database.Database;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class UserApi {
 
     public static Response getUserList(Request request) {
-        return new Response(Database.user.getAll(), 200);
+        List<User> userList = Database.user.getAll();
+        List<UserOut> userOutList = userList.stream().map(UserOut::new).collect(Collectors.toList());
+        return new Response(userOutList, 200);
     }
 
     public static Response getUser(Request request) {
@@ -42,12 +47,23 @@ public class UserApi {
 
     public static Response register(Request request) {
         UserAuth body = (UserAuth) request.body;
+        if (body.username.equals("")) {
+            return new Response(new Message("Field cannot be empty: username"), 500);
+        }
+        if (body.password.equals("")) {
+            return new Response(new Message("Field cannot be empty: password"), 500);
+        }
+        // Check if a user exists with requested username
+        User userOld = Database.user.getWithKeyValue("username", body.username);
+        if (userOld != null) {
+            return new Response(new Message("User with " + body.username + " already exists."), 500);
+        }
+        // Create user
         User user = new User(body.username, body.password.hashCode());
         User userCreated = Database.user.create(user);
         if (userCreated != null) {
             return new Response(new UserOut(userCreated), 200);
         }
-
         return new Response(new Message("User cannot be created."), 500);
     }
 
