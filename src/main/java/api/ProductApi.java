@@ -8,10 +8,33 @@ import core.Response;
 import api.model.Product;
 import database.Database;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ProductApi {
 
+    private static ProductOut getProductOut(Product product) {
+        ProductOut productOut = new ProductOut(product, null, null);
+        // Retrieve owner
+        User owner = Database.user.get(product.ownerId);
+        if (owner != null) {
+            productOut.owner = new UserOut(owner);
+        }
+        // Retrieve last bid
+        Bid lastBid = Database.bid.get(product.lastBidId);
+        if (lastBid != null) {
+            User fromUser = Database.user.get(lastBid.fromUserId);
+            productOut.lastBid = new BidOut(lastBid, new UserOut(fromUser));
+        }
+        return productOut;
+    }
+
     public static Response getProductList(Request request) {
-        return new Response(Database.product.getAll(), 200);
+        List<Product> productList = Database.product.getAll();
+        List<ProductOut> productOutList = productList.stream()
+                .map(ProductApi::getProductOut)
+                .collect(Collectors.toList());
+        return new Response(productOutList, 200);
     }
 
     public static Response getProduct(Request request) {
@@ -19,18 +42,7 @@ public class ProductApi {
         int productId = body.id;
         Product product = Database.product.get(productId);
         if (product != null) {
-            ProductOut productOut = new ProductOut(product, null, null);
-            // Retrieve owner
-            User owner = Database.user.get(product.ownerId);
-            if (owner != null) {
-                productOut.owner = new UserOut(owner);
-            }
-            // Retrieve last bid
-            Bid lastBid = Database.bid.get(product.lastBidId);
-            if (lastBid != null) {
-                User fromUser = Database.user.get(lastBid.fromUserId);
-                productOut.lastBid = new BidOut(lastBid, new UserOut(fromUser));
-            }
+            ProductOut productOut = getProductOut(product);
             return new Response(productOut, 200);
         }
         return new Response(new Message("Product cannot be retrieved."), 500);
