@@ -56,6 +56,10 @@ public class Router {
                 convertRequestBody(request, UserAuth.class);
                 response = UserApi.login(request);
                 break;
+            case "deleteUser":
+                convertRequestBody(request, IdHolder.class);
+                response = UserApi.deleteUser(request);
+                break;
             case "getBidList":
                 response = BidApi.getBidList(request);
                 break;

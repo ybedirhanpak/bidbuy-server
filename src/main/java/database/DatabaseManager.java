@@ -1,21 +1,23 @@
 package database;
 
-import com.google.gson.Gson;
-import com.google.gson.internal.LinkedTreeMap;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
-
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.stream.JsonReader;
+import api.dto.IdHolder;
+import concurrency.Lock;
+import concurrency.LockManager;
+import core.ThreadManager;
+import core.Util;
 
 public class DatabaseManager<T extends DatabaseModel> {
 
-    private final Gson gson = new Gson();
+    // Unique variables to this database type
     private final String typeName;
     private final Class<T> className;
     private DatabaseType type;
@@ -24,84 +26,71 @@ public class DatabaseManager<T extends DatabaseModel> {
         this.typeName = className.getSimpleName().toLowerCase();
         this.className = className;
         try {
-            String typeFileName = getTypeFile();
-            boolean fileCreated = this.createFile(typeFileName);
+            String typeFileName = getTypeJSONFileName();
+            boolean fileCreated = Util.createFile(typeFileName);
             if (fileCreated) {
                 // Create type object
                 this.type = new DatabaseType(this.typeName);
                 // Save type object into file
-                writeToFile(type, typeFileName);
+                Util.writeObjectToJSONFile(type, typeFileName);
             } else {
                 // Read type object from file
-                this.type = readTypeFromFile(typeFileName);
+                this.type = Util.readObjectFromJSONFile(typeFileName, DatabaseType.class);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private String getTypeFile() {
+    private synchronized Lock getLock(int id) {
+        return LockManager.getLock(className, id);
+    }
+
+    private String getTypeJSONFileName() {
         return "db/" + this.typeName + "/" + this.typeName + "_type.json";
     }
 
-    private String getObjectFile(int id) {
+    private String getObjectJSONFileName(int id) {
         return "db/" + this.typeName + "/" + this.typeName + "_" + id + ".json";
     }
 
-    private boolean createFile(String fileName) throws IOException {
-        File file = new File(fileName);
-        boolean dirCreated = file.getParentFile().mkdirs();
-        boolean fileCreated = file.createNewFile();
-        return dirCreated || fileCreated;
-    }
-
-    private boolean deleteFile(String fileName) {
-        File file = new File(fileName);
-        if (file.exists()) {
-            return file.delete();
-        }
-        return false;
-    }
-
-    private void writeToFile(Object object, String fileName) throws IOException {
-        FileWriter writer = new FileWriter(fileName);
-        gson.toJson(object, writer);
-        writer.close();
-    }
-
-    private DatabaseType readTypeFromFile(String fileName) throws IOException {
-        JsonReader reader = new JsonReader(new FileReader(fileName));
-        return gson.fromJson(reader, new TypeToken<DatabaseType>() {
-        }.getType());
-    }
-
-    private T readObjectFromFile(String fileName) throws IOException {
-        JsonReader reader = new JsonReader(new FileReader(fileName));
-        return gson.fromJson(reader, className);
+    private void printLockMessage(int id, String message) {
+        getLock(id).printMsg(message);
     }
 
     public T get(int id) {
-        String fileName = getObjectFile(id);
-        File file = new File(fileName);
-        if (file.exists()) {
-            try {
-                return readObjectFromFile(fileName);
-            } catch (IOException e) {
-                e.printStackTrace();
+        printLockMessage(id, "Before get");
+        T obj = null;
+        try {
+            getLock(id).lock();
+            printLockMessage(id, "Inside get");
+            String fileName = getObjectJSONFileName(id);
+            File file = new File(fileName);
+            if (file.exists()) {
+                try {
+                    obj = Util.readObjectFromJSONFile(fileName, className);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            getLock(id).release();
         }
-        return null;
+        return obj;
     }
 
     public T getWithKeyValue(String key, Object value) {
+        Gson gson = Util.getGson();
         for (int i = 1; i <= type.getTypeId(); i++) {
-            String fileName = getObjectFile(i);
+            String fileName = getObjectJSONFileName(i);
             File file = new File(fileName);
             if (file.exists()) {
                 try {
                     JsonReader reader = new JsonReader(new FileReader(fileName));
-                    LinkedTreeMap<String, Object> map =  gson.fromJson(reader, LinkedTreeMap.class);
-                    if(map.get(key).equals(value)) {
+                    LinkedTreeMap<String, Object> map = gson.fromJson(reader, LinkedTreeMap.class);
+                    if (map.get(key).equals(value)) {
                         return get(i);
                     }
                 } catch (IOException e) {
@@ -113,16 +102,20 @@ public class DatabaseManager<T extends DatabaseModel> {
     }
 
     public List<T> getAllWithKeyValue(String key, Object value) {
+        Gson gson = Util.getGson();
         ArrayList<T> result = new ArrayList<>();
         for (int i = 1; i <= type.getTypeId(); i++) {
-            String fileName = getObjectFile(i);
+            String fileName = getObjectJSONFileName(i);
             File file = new File(fileName);
             if (file.exists()) {
                 try {
                     JsonReader reader = new JsonReader(new FileReader(fileName));
-                    LinkedTreeMap<String, Object> map =  gson.fromJson(reader, LinkedTreeMap.class);
-                    if(map.get(key).equals(value)) {
-                        result.add(get(i));
+                    LinkedTreeMap<String, Object> map = gson.fromJson(reader, LinkedTreeMap.class);
+                    if (map.get(key).equals(value)) {
+                        T obj = get(i);
+                        if (obj != null) {
+                            result.add(obj);
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -133,26 +126,38 @@ public class DatabaseManager<T extends DatabaseModel> {
     }
 
     public T create(T obj) {
-        int id = type.getTypeId();
-        String fileName = getObjectFile(id);
-        File file = new File(fileName);
-        if (!file.exists()) {
-            try {
-                // Set object id and save into file
-                obj.id = id;
-                writeToFile(obj, fileName);
-                // Increase id and save into file
-                type.increaseTypeId();
-                writeToFile(type, getTypeFile());
-                return obj;
-            } catch (IOException e) {
-                e.printStackTrace();
+        ThreadManager.message("Before create");
+        int id = type.getCurrentIdAndIncrease();
+        // If increase is unsuccessful, return
+        if (id < 0) {
+            return null;
+        }
+        try {
+            getLock(id).lock();
+            printLockMessage(id, "Inside create");
+            String fileName = getObjectJSONFileName(id);
+            File file = new File(fileName);
+            // If there is an object with the same id, don't create a new one
+            if (!file.exists()) {
+                try {
+                    // Set object id and save into file
+                    obj.id = id;
+                    Util.writeObjectToJSONFile(obj, fileName);
+                    return obj;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            getLock(id).release();
         }
         return null;
     }
 
     public List<T> getAll() {
+        ThreadManager.message("getWithKeyValue");
         ArrayList<T> result = new ArrayList<>();
         for (int i = 1; i <= type.getTypeId(); i++) {
             T obj = get(i);
@@ -164,25 +169,43 @@ public class DatabaseManager<T extends DatabaseModel> {
     }
 
     public T update(T obj) {
-        T old = get(obj.id);
-        if (old != null) {
-            try {
-                // Update the file directly
-                writeToFile(obj, getObjectFile(obj.id));
-                return obj;
-            } catch (IOException e) {
-                e.printStackTrace();
+        ThreadManager.message("Before update, Lock:" + getLock(obj.id));
+        try {
+            getLock(obj.id).lock();
+            ThreadManager.message("Inside update, Lock:" + getLock(obj.id));
+            T old = get(obj.id);
+            if (old != null) {
+                try {
+                    // Update the file directly
+                    Util.writeObjectToJSONFile(obj, getObjectJSONFileName(obj.id));
+                    return obj;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            getLock(obj.id).release();
         }
         return null;
     }
 
-    public boolean delete(T obj) {
-        T old = get(obj.id);
-        if (old != null) {
-            // Delete the file directly
-            return deleteFile(getObjectFile(obj.id));
+    public boolean delete(IdHolder obj) {
+        printLockMessage(obj.id, "Before delete");
+        boolean deleted = false;
+        try {
+            getLock(obj.id).lock();
+            printLockMessage(obj.id, "Inside delete");
+            T old = get(obj.id);
+            if (old != null) {
+                deleted = Util.deleteFile(getObjectJSONFileName(obj.id));
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            getLock(obj.id).release();
         }
-        return false;
+        return deleted;
     }
 }

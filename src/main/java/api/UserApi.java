@@ -3,6 +3,7 @@ package api;
 import api.dto.Message;
 import api.dto.UserAuth;
 import api.dto.IdHolder;
+import api.dto.UserOut;
 import api.model.User;
 import core.Request;
 import core.Response;
@@ -19,7 +20,8 @@ public class UserApi {
         int userId = body.id;
         User user = Database.user.get(userId);
         if (user != null) {
-            return new Response(user, 200);
+            UserOut userOut = new UserOut(user);
+            return new Response(userOut, 200);
         }
         return new Response(new Message("User cannot be retrieved."), 500);
     }
@@ -42,5 +44,14 @@ public class UserApi {
         }
 
         return new Response(new Message("User cannot be created."), 500);
+    }
+
+    public static Response deleteUser(Request request) {
+        IdHolder body = (IdHolder) request.body;
+        boolean deleted = Database.user.delete(body);
+        if (deleted) {
+            return new Response(new Message("User" + body.id + " is deleted"), 200);
+        }
+        return new Response(new Message("User" + body.id + " cannot be deleted."), 500);
     }
 }

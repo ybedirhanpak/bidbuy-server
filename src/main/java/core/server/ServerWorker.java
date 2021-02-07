@@ -26,7 +26,7 @@ public class ServerWorker implements Runnable {
             // Get request
             String requestJson = Util.inputStreamToJson(clientSocket.getInputStream());
             Request request = gson.fromJson(requestJson, Request.class);
-            System.out.println("Server thread received: " + request.identifier + " on " + Thread.currentThread());
+            ThreadManager.message("Server:" + request.identifier + " : " + requestJson);
 
             // Get a single response
             Response response = Router.routeRequest(request);
