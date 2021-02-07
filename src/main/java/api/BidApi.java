@@ -54,6 +54,12 @@ public class BidApi {
                     500);
         }
 
+        if(body.fromUserId == product.ownerId) {
+            return new Response(
+                    new Message("Product owners cannot give bid."),
+                    500);
+        }
+
         // Create bid
         Bid bidCreated = Database.bid.create(bid);
         if (bidCreated == null) {
