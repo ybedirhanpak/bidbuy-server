@@ -2,7 +2,19 @@ plugins {
     id 'java'
 }
 
-group 'org.example'
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'Main'
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+group 'org.bidbuy'
 version '1.0-SNAPSHOT'
 
 repositories {
