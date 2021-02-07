@@ -5,10 +5,10 @@ import database.DatabaseModel;
 public class Product extends DatabaseModel {
     public String name;
     public double price;
-    public int ownerId;
-    public int lastBidId;
-    public boolean isSold;
-    public String imageURL;
+    public int ownerId = -1;
+    public int lastBidId = -1;
+    public boolean isSold = false;
+    public String imageURL = "";
 
     public Product(String name, double price) {
         this.name = name;
