@@ -6,6 +6,9 @@ import com.google.gson.stream.JsonReader;
 import database.DatabaseType;
 
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Util {
 
@@ -56,5 +59,11 @@ public class Util {
             return file.delete();
         }
         return false;
+    }
+
+    public static String dateToString(Date date) {
+        String pattern = "MM/dd/yyyy HH:mm:ss";
+        DateFormat df = new SimpleDateFormat(pattern);
+        return df.format(date);
     }
 }

@@ -1,5 +1,6 @@
 package api.model;
 
+import core.Util;
 import database.DatabaseModel;
 
 import java.util.Date;
@@ -14,6 +15,6 @@ public class Bid extends DatabaseModel {
         this.fromUserId = fromUserId;
         this.toProductId = toProductId;
         this.price = price;
-        this.createDate = new Date().toString();
+        this.createDate = Util.dateToString(new Date());
     }
 }
