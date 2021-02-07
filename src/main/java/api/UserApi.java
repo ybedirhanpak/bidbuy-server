@@ -6,20 +6,18 @@ import api.dto.IdHolder;
 import api.model.User;
 import core.Request;
 import core.Response;
-import database.DatabaseManager;
+import database.Database;
 
 public class UserApi {
 
-    private static final DatabaseManager<User> db = new DatabaseManager<>(User.class);
-
     public static Response getUserList(Request request) {
-        return new Response(db.getAll(), 200);
+        return new Response(Database.user.getAll(), 200);
     }
 
     public static Response getUser(Request request) {
         IdHolder body = (IdHolder) request.body;
         int userId = body.id;
-        User user = db.get(userId);
+        User user = Database.user.get(userId);
         if (user != null) {
             return new Response(user, 200);
         }
@@ -28,8 +26,8 @@ public class UserApi {
 
     public static Response login(Request request) {
         UserAuth body = (UserAuth) request.body;
-        User dbUser = db.getWithKeyValue("username", body.username);
-        if(dbUser != null && body.password.hashCode() == dbUser.passwordHash) {
+        User dbUser = Database.user.getWithKeyValue("username", body.username);
+        if (dbUser != null && body.password.hashCode() == dbUser.passwordHash) {
             return new Response(dbUser, 200);
         }
         return new Response(new Message("Wrong username or password"), 500);
@@ -38,7 +36,7 @@ public class UserApi {
     public static Response register(Request request) {
         UserAuth body = (UserAuth) request.body;
         User user = new User(body.username, body.password.hashCode());
-        User userCreated = db.create(user);
+        User userCreated = Database.user.create(user);
         if (userCreated != null) {
             return new Response(userCreated, 200);
         }

@@ -6,29 +6,23 @@ import api.model.Product;
 import api.model.User;
 import core.Request;
 import core.Response;
-import database.DatabaseManager;
+import database.Database;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class BidApi {
 
-    private static final DatabaseManager<Bid> db = new DatabaseManager<>(Bid.class);
-    private static final DatabaseManager<Product> product_db = new DatabaseManager<>(Product.class);
-    private static final DatabaseManager<User> userDb = new DatabaseManager<>(User.class);
-
-
     public static Response getBidList(Request request) {
-        return new Response(db.getAll(), 200);
+        return new Response(Database.bid.getAll(), 200);
     }
 
     public static Response getBidListOfProduct(Request request) {
         ProductIdHolder body = (ProductIdHolder) request.body;
-        List<Bid> bidList = db.getAllWithKeyValue("toProductId", (double) body.productId);
+        List<Bid> bidList = Database.bid.getAllWithKeyValue("toProductId", (double) body.productId);
         List<BidOut> bidOutList = new ArrayList<>();
         bidList.forEach(bid -> {
-            User fromUser = userDb.get(bid.fromUserId);
+            User fromUser = Database.user.get(bid.fromUserId);
             bidOutList.add(new BidOut(bid, new UserOut(fromUser)));
         });
         return new Response(bidOutList, 200);
@@ -36,14 +30,14 @@ public class BidApi {
 
     public static Response getBidListOfUser(Request request) {
         UserIdHolder body = (UserIdHolder) request.body;
-        List<Bid> bidList = db.getAllWithKeyValue("fromUserId", (double) body.userId);
+        List<Bid> bidList = Database.bid.getAllWithKeyValue("fromUserId", (double) body.userId);
         return new Response(bidList, 200);
     }
 
     public static Response getBid(Request request) {
         IdHolder body = (IdHolder) request.body;
         int bidId = body.id;
-        Bid bid = db.get(bidId);
+        Bid bid = Database.bid.get(bidId);
         if (bid != null) {
             return new Response(bid, 200);
         }
@@ -53,7 +47,7 @@ public class BidApi {
     public static Response createBid(Request request) {
         BidCreate body = (BidCreate) request.body;
         Bid bid = new Bid(body.fromUserId, body.toProductId, body.price);
-        Product product = product_db.get(body.toProductId);
+        Product product = Database.product.get(body.toProductId);
         if (body.price <= product.price) {
             return new Response(
                     new Message("Bid price must be greater than product price"),
@@ -61,7 +55,7 @@ public class BidApi {
         }
 
         // Create bid
-        Bid bidCreated = db.create(bid);
+        Bid bidCreated = Database.bid.create(bid);
         if (bidCreated == null) {
             return new Response(new Message("Bid cannot be created."), 500);
         }
@@ -69,9 +63,9 @@ public class BidApi {
         // Update product
         product.price = body.price;
         product.lastBidId = bidCreated.id;
-        Product updatedProduct = product_db.update(product);
+        Product updatedProduct = Database.product.update(product);
         if (updatedProduct == null) {
-            db.delete(bidCreated);
+            Database.bid.delete(new IdHolder(bidCreated.id));
             return new Response(
                     new Message("Bid cannot be created: Error while updating the product"),
                     500);
@@ -82,7 +76,7 @@ public class BidApi {
 
     public static Response updateBid(Request request) {
         Bid body = (Bid) request.body;
-        Bid updatedBid = db.update(body);
+        Bid updatedBid = Database.bid.update(body);
         if (updatedBid != null) {
             return new Response(updatedBid, 200);
         }
@@ -91,8 +85,8 @@ public class BidApi {
     }
 
     public static Response deleteBid(Request request) {
-        Bid body = (Bid) request.body;
-        boolean deleted = db.delete(body);
+        IdHolder body = (IdHolder) request.body;
+        boolean deleted = Database.bid.delete(body);
         if (deleted) {
             return new Response(new Message("Bid is deleted"), 200);
         }

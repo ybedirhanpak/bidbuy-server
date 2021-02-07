@@ -25,10 +25,9 @@ public class Client {
 
             // Get response
             String responseJson = Util.inputStreamToJson(clientSocket.getInputStream());
-            System.out.println("Response received by client " + responseJson);
+            System.out.println("Single received by client " + responseJson);
 
             Response response = gson.fromJson(responseJson, Response.class);
-            System.out.println("Response body " + response.body);
 
             clientSocket.close();
         } catch (IOException e) {
@@ -53,7 +52,7 @@ public class Client {
             // Read as long as you want to get response from server
             while(waitForResponse) {
                 String response = reader.readLine();
-                System.out.println("Client received: " + response);
+                System.out.println("Continuous received by client: " + response);
             }
 
             clientSocket.close();

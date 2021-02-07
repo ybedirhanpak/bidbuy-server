@@ -13,4 +13,13 @@ public class Util {
         DataOutputStream requestStream = new DataOutputStream(stream);
         requestStream.writeBytes(json + '\n');
     }
+
+    public static void sleepThread() {
+        try {
+            System.out.println("Thread sleeping: " + Thread.currentThread());
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

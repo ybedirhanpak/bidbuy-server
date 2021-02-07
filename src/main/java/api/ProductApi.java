@@ -5,33 +5,32 @@ import api.model.Bid;
 import api.model.User;
 import core.Request;
 import core.Response;
-import database.DatabaseManager;
 import api.model.Product;
+import database.Database;
 
 public class ProductApi {
 
-    private static final DatabaseManager<Product> db = new DatabaseManager<>(Product.class);
-    private static final DatabaseManager<User> userDb = new DatabaseManager<>(User.class);
-    private static final DatabaseManager<Bid> bidDb = new DatabaseManager<>(Bid.class);
-
-
     public static Response getProductList(Request request) {
-        return new Response(db.getAll(), 200);
+        return new Response(Database.product.getAll(), 200);
     }
 
     public static Response getProduct(Request request) {
         IdHolder body = (IdHolder) request.body;
         int productId = body.id;
-        Product product = db.get(productId);
+        Product product = Database.product.get(productId);
         if (product != null) {
-            User owner = userDb.get(product.ownerId);
-            Bid lastBid = bidDb.get(product.lastBidId);
-            User fromUser = userDb.get(lastBid.fromUserId);
-            ProductOut productOut = new ProductOut(
-                    product,
-                    new UserOut(owner),
-                    new BidOut(lastBid, new UserOut(fromUser))
-            );
+            ProductOut productOut = new ProductOut(product, null, null);
+            // Retrieve owner
+            User owner = Database.user.get(product.ownerId);
+            if (owner != null) {
+                productOut.owner = new UserOut(owner);
+            }
+            // Retrieve last bid
+            Bid lastBid = Database.bid.get(product.lastBidId);
+            if (lastBid != null) {
+                User fromUser = Database.user.get(lastBid.fromUserId);
+                productOut.lastBid = new BidOut(lastBid, new UserOut(fromUser));
+            }
             return new Response(productOut, 200);
         }
         return new Response(new Message("Product cannot be retrieved."), 500);
@@ -40,7 +39,7 @@ public class ProductApi {
     public static Response createProduct(Request request) {
         ProductCreate body = (ProductCreate) request.body;
         Product product = new Product(body.name, body.price, body.ownerId, body.imageURL);
-        Product productCreated = db.create(product);
+        Product productCreated = Database.product.create(product);
         if (productCreated != null) {
             return new Response(productCreated, 200);
         }
@@ -50,7 +49,7 @@ public class ProductApi {
 
     public static Response updateProduct(Request request) {
         Product body = (Product) request.body;
-        Product updatedProduct = db.update(body);
+        Product updatedProduct = Database.product.update(body);
         if (updatedProduct != null) {
             return new Response(updatedProduct, 200);
         }
@@ -59,8 +58,8 @@ public class ProductApi {
     }
 
     public static Response deleteProduct(Request request) {
-        Product body = (Product) request.body;
-        boolean deleted = db.delete(body);
+        IdHolder body = (IdHolder) request.body;
+        boolean deleted = Database.product.delete(body);
         if (deleted) {
             return new Response(new Message("Product is deleted"), 200);
         }

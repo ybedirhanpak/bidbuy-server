@@ -12,9 +12,10 @@ import core.Response;
 
 public class Router {
 
-    private final static Gson gson = new Gson();
+    private static final ThreadLocal<Gson> gsonThreadLocal = ThreadLocal.withInitial(Gson::new);
 
     private static void convertRequestBody(Request request, Class<?> className) {
+        Gson gson = gsonThreadLocal.get();
         request.body = gson.fromJson(gson.toJsonTree(request.body).getAsJsonObject(), className);
     }
 
@@ -37,7 +38,7 @@ public class Router {
                 response = ProductApi.updateProduct(request);
                 break;
             case "deleteProduct":
-                convertRequestBody(request, Product.class);
+                convertRequestBody(request, IdHolder.class);
                 response = ProductApi.deleteProduct(request);
                 break;
             case "getUserList":
@@ -81,7 +82,7 @@ public class Router {
                 response = BidApi.updateBid(request);
                 break;
             case "deleteBid":
-                convertRequestBody(request, Bid.class);
+                convertRequestBody(request, IdHolder.class);
                 response = BidApi.deleteBid(request);
                 break;
             default:
