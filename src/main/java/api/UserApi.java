@@ -20,8 +20,7 @@ public class UserApi {
         int userId = body.id;
         User user = Database.user.get(userId);
         if (user != null) {
-            UserOut userOut = new UserOut(user);
-            return new Response(userOut, 200);
+            return new Response(new UserOut(user), 200);
         }
         return new Response(new Message("User cannot be retrieved."), 500);
     }
@@ -29,9 +28,15 @@ public class UserApi {
     public static Response login(Request request) {
         UserAuth body = (UserAuth) request.body;
         User dbUser = Database.user.getWithKeyValue("username", body.username);
-        if (dbUser != null && body.password.hashCode() == dbUser.passwordHash) {
-            return new Response(dbUser, 200);
+
+        if (dbUser == null) {
+            return new Response(new Message("User not found"), 500);
         }
+
+        if (body.password.hashCode() == dbUser.passwordHash) {
+            return new Response(new UserOut(dbUser), 200);
+        }
+
         return new Response(new Message("Wrong username or password"), 500);
     }
 
@@ -40,7 +45,7 @@ public class UserApi {
         User user = new User(body.username, body.password.hashCode());
         User userCreated = Database.user.create(user);
         if (userCreated != null) {
-            return new Response(userCreated, 200);
+            return new Response(new UserOut(userCreated), 200);
         }
 
         return new Response(new Message("User cannot be created."), 500);
