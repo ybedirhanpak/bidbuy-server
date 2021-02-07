@@ -17,6 +17,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         createServerSocket();
+        System.out.println("Server listening on port: " + this.port);
         while (!isStopped) {
             try {
                 Socket clientSocket = this.serverSocket.accept();
