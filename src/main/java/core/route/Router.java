@@ -81,10 +81,6 @@ public class Router {
                 response = BidApi.createBid(request);
                 SubscriptionManager.triggerSubscriptions("createBid", body.toProductId);
                 break;
-            case "updateBid":
-                convertRequestBody(request, Bid.class);
-                response = BidApi.updateBid(request);
-                break;
             case "deleteBid":
                 convertRequestBody(request, IdHolder.class);
                 response = BidApi.deleteBid(request);

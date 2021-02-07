@@ -74,16 +74,6 @@ public class BidApi {
         return new Response(bidCreated, 200);
     }
 
-    public static Response updateBid(Request request) {
-        Bid body = (Bid) request.body;
-        Bid updatedBid = Database.bid.update(body);
-        if (updatedBid != null) {
-            return new Response(updatedBid, 200);
-        }
-
-        return new Response(new Message("Bid cannot be updated."), 500);
-    }
-
     public static Response deleteBid(Request request) {
         IdHolder body = (IdHolder) request.body;
         boolean deleted = Database.bid.delete(body);
