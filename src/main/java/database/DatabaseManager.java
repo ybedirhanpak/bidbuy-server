@@ -173,7 +173,7 @@ public class DatabaseManager<T extends DatabaseModel> {
     public List<T> getAll() {
         ThreadManager.message("getAll");
         ArrayList<T> result = new ArrayList<>();
-        for (int i = 1; i <= type.getTypeId(); i++) {
+        for (int i = 0; i < type.getTypeId(); i++) {
             T obj = get(i);
             if (obj != null) {
                 result.add(obj);
