@@ -44,7 +44,7 @@ public class BidApi {
         return new Response(new Message("Bid cannot be retrieved."), 500);
     }
 
-    public static Response createBid(Request request) {
+    public static synchronized Response createBid(Request request) {
         BidCreate body = (BidCreate) request.body;
         Bid bid = new Bid(body.fromUserId, body.toProductId, body.price);
         Product product = Database.product.get(body.toProductId);
